@@ -1,17 +1,17 @@
-#include "drivers/gpio.h"
-#include "delay.h"
+#include "drivers/include/gpio.h"
+#include "drivers/include/rtc.h"
+
+#define DELAY 100
 
 int app_main() {
 
-    setup_pin(2);
-    
-    fall_pin(2);
-    delay_us(10000000);
-    rise_pin(2);
-    delay_us(10000000);
-    fall_pin(2);
-    delay_us(10000000);
-    rise_pin(2);
+    setup_pin(4);
 
-    return 0;
+    while (1)
+    {
+        rise_pin(4);
+        delay_ms(DELAY);
+        fall_pin(4);
+        delay_ms(DELAY);
+    }
 }

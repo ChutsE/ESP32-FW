@@ -1,4 +1,5 @@
-#include "include/gpio_hif.h"
+#include "include/gpio_regs.h"
+#include "include/gpio.h"
 #include "include/utils.h"
 
 void setup_pin(unsigned int pin) {

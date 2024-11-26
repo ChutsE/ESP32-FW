@@ -1,5 +1,5 @@
-#ifndef GPIO_HIF_H
-#define GPIO_HIF_H
+#ifndef GPIO_REGS_H
+#define GPIO_REGS_H
 
 #define GPIO_BASE 0x3FF44000
 #define GPIO_ENABLE_REG (GPIO_BASE + 0x0020)
