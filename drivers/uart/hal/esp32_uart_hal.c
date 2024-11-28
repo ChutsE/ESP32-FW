@@ -46,9 +46,8 @@ const uint32_t io_mux_gpio_reg_map[40] = {
     IO_MUX_BASE_ADDR+0x10,
 };
 
-// FUNCTIONAL
+
 void hal_uart_configure(uint32_t base_addr, uint32_t baudrate, uint8_t data_bits, uint8_t stop_bits, uint8_t parity) {
-    printf("\nBEGINNING UART config\n");
     volatile uint32_t* uart_clkdiv_reg = (volatile uint32_t*)(base_addr + UART_CLKDIV_OFFSET);
     volatile uint32_t* uart_conf0_reg = (volatile uint32_t*)(base_addr + UART_CONF0_OFFSET);
     // volatile uint32_t* uart_conf1_reg = (volatile uint32_t*)(base_addr + UART_CONF1_OFFSET);
@@ -56,22 +55,24 @@ void hal_uart_configure(uint32_t base_addr, uint32_t baudrate, uint8_t data_bits
     volatile uint32_t* dport_perip_clk_en = (volatile uint32_t*)DPORT_PERIP_CLK_EN_REG;
     volatile uint32_t* dport_perip_rst_en = (volatile uint32_t*)DPORT_PERIP_RST_EN_REG;
 
-    // Clear reset and set clk enable
+    // Clear reset and set clk enable //
     // For shared UARTs memory
     *dport_perip_rst_en &= ~(1 << 24);
     *dport_perip_clk_en |= (1 << 24);
 
     if(base_addr == UART0_BASE_ADDR){
-        // For UART2
+        // UART0
         *dport_perip_rst_en &= ~(1 << 2);
         *dport_perip_clk_en |=  (1 << 2);
 
     }else if (base_addr == UART1_BASE_ADDR)
     {
+        // UART1
         *dport_perip_rst_en &= ~(1 << 5);
         *dport_perip_clk_en |=  (1 << 5);
     }else if (base_addr == UART2_BASE_ADDR)
     {
+        // UART2
         *dport_perip_rst_en &= ~(1 << 23);
         *dport_perip_clk_en |=  (1 << 23);
     }
@@ -133,12 +134,10 @@ void hal_uart_configure(uint32_t base_addr, uint32_t baudrate, uint8_t data_bits
 
     // Remove time spaces between transmits
     *uart_idle_conf_reg &= ~(0x3F << 10); 
-    printf("\nFINISHED UART config\n");
 }
 
-// FUNCTIONAL
+
 void hal_uart_set_pins(uint32_t base_addr, uint8_t tx_pin, uint8_t rx_pin) {  
-    printf("\nBEGINNING GPIO CONFIG\n");
     // Determine UART signal indices (same for input and output) see p. 56 table 4-2
     uint32_t uart_signal = (base_addr == UART0_BASE_ADDR) ? 14 : 
                            (base_addr == UART1_BASE_ADDR) ? 17 : 198;
@@ -193,7 +192,6 @@ void hal_uart_set_pins(uint32_t base_addr, uint8_t tx_pin, uint8_t rx_pin) {
     /*1. Configure the GPIO_FUNCy_IN_SEL_CFG register corresponding to peripheral signal Y 
     in the GPIO Matrix*/
     *gpio_func_in_sel_cfg_reg &= ~(0xFF << 0);  // Clean IN_SEL fields
-    printf("-Setting IN_SEL gpio to %x.\n", rx_pin);
     *gpio_func_in_sel_cfg_reg |= (rx_pin << 0); // Set GPIO rx_pin number as input for the uart rx signal
     *gpio_func_in_sel_cfg_reg |= (1 << 7);      // Enable peripheral signal input via GPIO matrix
 
@@ -213,31 +211,34 @@ void hal_uart_set_pins(uint32_t base_addr, uint8_t tx_pin, uint8_t rx_pin) {
     *io_mux_rx_reg |= (2 << 12);   // Set IOMUX function to GPIO function (always func 2) 
     *io_mux_rx_reg |= (1 << 9);   // Set FUN_IE for input enable
     // *io_mux_rx_reg |= (1 << 8);    // Set FUN_WPU to 1 (enable pull-up resistor)  
-
-    printf("\nFINISHED GPIO CONFIG\n");
 }
 
-// SEMI-FUNCTIONAL. Issue: sends the char 2 times (lol)
+
 void hal_uart_write_byte(uint32_t base_addr, uint8_t byte) {
     volatile uint32_t* uart_status_reg = (volatile uint32_t*)(base_addr + UART_STATUS_OFFSET);
     volatile uint32_t* uart_fifo_reg = (volatile uint32_t*)(base_addr + UART_FIFO_OFFSET);
-    
-    // *uart_fifo_reg &= ~(0xFF << 0);
-    printf("\nFIFO 1st. value: %lx\n", (*uart_fifo_reg & 0xFF));
 
     while ((*uart_status_reg & (1 << 16)));
     *uart_fifo_reg = byte;
-
-    printf("\nFIFO last value: %lx\n", (*uart_fifo_reg & 0xFF));
-
-    // printf("Sent: %c\n", (char)byte);
 }
 
-// UNDER DEVELOPMENT, DO NOT USE. -Carlos
+
 uint8_t hal_uart_read_byte(uint32_t base_addr) {
     volatile uint32_t* uart_status_reg = (volatile uint32_t*)(base_addr + UART_STATUS_OFFSET);
     volatile uint32_t* uart_fifo_reg = (volatile uint32_t*)(base_addr + UART_FIFO_OFFSET);
 
-    while (!(*uart_status_reg & (1 << 0))); // Wait for RX FIFO data
-    return (uint8_t)(*uart_fifo_reg & 0xFF);
+    if(base_addr == UART0_BASE_ADDR){
+        volatile uint32_t* uart_conf0_reg = (volatile uint32_t*)(base_addr + UART_CONF0_OFFSET);
+        *uart_conf0_reg &= ~(1 << 17);   
+    }else if ((base_addr == UART1_BASE_ADDR) | (base_addr == UART2_BASE_ADDR))
+    {
+        volatile uint32_t* uart_conf0_reg = (volatile uint32_t*)(UART1_BASE_ADDR + UART_CONF0_OFFSET);
+        *uart_conf0_reg &= ~(1 << 17);
+    }
+    
+    while (!(*uart_status_reg & (1 << 0))); // Wait for RX FIFO data    
+
+    uint8_t data = (uint8_t)(*uart_fifo_reg & 0xFF);
+    
+    return data;
 }

@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 // Base addresses for UART peripherals
-#define UART0_BASE_ADDR     0x3FF40000
-#define UART1_BASE_ADDR     0x3FF50000
-#define UART2_BASE_ADDR     0x3FF6E000
+#define UART0_BASE_ADDR         0x3FF40000
+#define UART1_BASE_ADDR         0x3FF50000
+#define UART2_BASE_ADDR         0x3FF6E000
 
 // DPORT Registers
 #define DPORT_PERIP_CLK_EN_REG  0x3FF000C0 // Clock Gating
